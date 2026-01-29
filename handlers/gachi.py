@@ -3,7 +3,7 @@ import re
 import os
 from aiogram import Router, F
 from aiogram.types import Message, FSInputFile
-
+from data_manager import db
 import data_manager
 from services import vk_service
 from utils import text_utils
@@ -42,19 +42,20 @@ async def gachi_ball(message: Message):
 
 @router.message(F.text.lower().startswith("гачи имя"))
 async def set_name_handler(message: Message):
-    new_name = message.text[8:].strip()
+    new_name = message.text[9:].strip()
+
     if not new_name:
         await message.answer("Укажи имя, например: гачи имя Работяга")
         return
 
-    if any(bad in new_name for bad in data_manager.ban_words):
-        data_manager.custom_usernames[message.from_user.id] = "fucken slave"
-        await message.answer("Oh fuck you, буду звать тебя fucken slave")
+    if any(bad.lower() in new_name.lower() for bad in db.ban_words):
+        db.custom_usernames[message.from_user.id] = "fucking slave"
+        await db.save_data("usernames")
+        await message.answer("Oh fuck you, буду звать тебя fucking slave")
     else:
-        data_manager.custom_usernames[message.from_user.id] = new_name
-        await message.answer(f"Понял, буду звать тебя {new_name}")
-
-    await data_manager.save_json_async(data_manager.USERNAMES_FILE, data_manager.custom_usernames)
+        db.custom_usernames[message.from_user.id] = new_name
+        await db.save_data("usernames")
+        await message.answer(f"Понял, буду звать тебя {new_name}, buddy!")
 
 
 @router.message(F.text.lower().contains("гачи цитата"))
@@ -73,8 +74,8 @@ async def sex_handler(message: Message):
 
     s_id = message.from_user.id
     t_id = message.reply_to_message.from_user.id
-    s_name = data_manager.custom_usernames.get(s_id, message.from_user.first_name)
-    t_name = data_manager.custom_usernames.get(t_id, message.reply_to_message.from_user.first_name)
+    s_name = db.custom_usernames.get(s_id, message.from_user.first_name)
+    t_name = db.custom_usernames.get(t_id, message.reply_to_message.from_user.first_name)
 
     sender = f"<a href='tg://user?id={s_id}'>{s_name}</a>"
     target = f"<a href='tg://user?id={t_id}'>{t_name}</a>"

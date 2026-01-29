@@ -41,7 +41,7 @@ async def farewell(message: Message):
 async def text_triggers(message: Message):
     msg_lower = message.text.lower()
     u_id = message.from_user.id
-    name = data_manager.custom_usernames.get(u_id, message.from_user.first_name)
+    name = data_manager.db.custom_usernames.get(u_id, message.from_user.first_name)
 
     if "сос" in msg_lower: await message.answer(f"Сам соси, {name}")
     elif "ебать ты" in msg_lower: await message.answer(f"Нет, ебать ты, {name}!")

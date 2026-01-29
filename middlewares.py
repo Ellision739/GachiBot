@@ -3,7 +3,7 @@ import os
 import asyncio
 from aiogram import BaseMiddleware
 from aiogram.types import Message, FSInputFile
-import data_manager
+from data_manager import db
 
 logger = logging.getLogger(__name__)
 
@@ -19,18 +19,17 @@ class GachiMiddleware(BaseMiddleware):
             text_lower = text.lower()
 
             # Молчанка
-            if event.chat.id in data_manager.silent_chats:
+            if event.chat.id in db.silent_chats:
                 if "гачи помолчи" not in text_lower:
                     return
 
             # Приветствие
             user_id = str(event.from_user.id)
-            if user_id not in data_manager.seen_ids:
-                data_manager.seen_ids.add(user_id)
+            if user_id not in db.seen_ids:
+                db.seen_ids.add(user_id)
 
                 # Сохраняем в фоне
-                _task = asyncio.create_task(
-                    data_manager.save_json_async(data_manager.SEEN_IDS_FILE, list(data_manager.seen_ids)))
+                _task = asyncio.create_task(db.save_data("seen_ids"))
 
                 try:
                     await event.answer('Welcome to the club, buddy! Напиши "гачи помощь".')
