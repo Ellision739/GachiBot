@@ -3,6 +3,7 @@ import os
 import asyncio
 import logging
 import shutil
+import datetime
 from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger(__name__)
@@ -15,6 +16,7 @@ class GachiDataManager:
         self.SEEN_IDS_FILE = "data/seen_ids.json"
         self.BAN_WORDS_FILE = "data/ban_words.json"
         self.SILENT_CHATS_FILE = "data/silent_chats.json"
+        self.SLAVE_STATS_FILE = "data/slave_stats.json"
 
         # Инструменты асинхронности
         self._executor = ThreadPoolExecutor(max_workers=3)
@@ -25,6 +27,7 @@ class GachiDataManager:
         self.seen_ids = set(map(int, self._load_json(self.SEEN_IDS_FILE, [])))
         self.silent_chats = set(self._load_json(self.SILENT_CHATS_FILE, []))
         self.ban_words = self._load_json(self.BAN_WORDS_FILE, ["шаман", "шамов", "данил", "даниил"])
+        self.slave_stats = {int(k): v for k, v in self._load_json(self.SLAVE_STATS_FILE, {}).items()}
 
     def _load_json(self, file, default):
         """Внутренний метод для загрузки (синхронный, т.к. только при старте)"""
@@ -45,7 +48,8 @@ class GachiDataManager:
             "usernames": (self.USERNAMES_FILE, self.custom_usernames),
             "seen_ids": (self.SEEN_IDS_FILE, list(self.seen_ids)),
             "ban_words": (self.BAN_WORDS_FILE, self.ban_words),
-            "silent_chats": (self.SILENT_CHATS_FILE, list(self.silent_chats))
+            "silent_chats": (self.SILENT_CHATS_FILE, list(self.silent_chats)),
+            "slave_stats": (self.SLAVE_STATS_FILE, self.slave_stats)
         }
 
         if key not in config:
@@ -69,6 +73,48 @@ class GachiDataManager:
 
             await loop.run_in_executor(self._executor, _write)
 
+    MUTE_STAGES = [5, 10, 30, 60, 120, 300, 720, 1440]
 
-# Создаем экземпляр менеджера
+    def punish_slave(self, user_id: int):
+        """Наказывает слэйва: повышает счетчик и ставит время мута."""
+
+        # Получаем текущую статистику или создаем новую
+        stats = self.slave_stats.get(user_id, {"count": 0, "mute_until": None})
+
+        # Определяем стадию наказания (не выше последней в списке)
+        stage = min(stats["count"], len(self.MUTE_STAGES) - 1)
+        minutes = self.MUTE_STAGES[stage]
+
+        # Вычисляем время окончания
+        until = datetime.datetime.now() + datetime.timedelta(minutes=minutes)
+
+        # Обновляем статы
+        self.slave_stats[user_id] = {
+            "count": stats["count"] + 1,
+            "mute_until": until.isoformat()
+        }
+
+        # Насильно меняем имя на fucking slave
+        self.custom_usernames[user_id] = "fucking slave"
+
+        # Запускаем фоновое сохранение обоих файлов
+        asyncio.create_task(self.save_data("slave_stats"))
+        asyncio.create_task(self.save_data("usernames"))
+
+        return minutes  # Возвращаем на сколько минут замутили для уведомления
+
+    def get_mute_time(self, user_id: int) -> str:
+        """Проверяет мут и возвращает время в красивом формате или None."""
+
+        stats = self.slave_stats.get(user_id)
+        if not stats or not stats.get("mute_until"):
+            return None
+
+        until = datetime.datetime.fromisoformat(stats["mute_until"])
+        if datetime.datetime.now() < until:
+            # Возвращаем сколько осталось или до какого времени
+            return until.strftime("%H:%M %d.%m")
+        return None
+
+
 db = GachiDataManager()

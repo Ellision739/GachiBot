@@ -39,6 +39,15 @@ async def kick_handler(message: Message):
 
 @router.message(F.text.lower().startswith(Cmd.BUG))
 async def bug_report(message: Message, bot):
+    mute_until = db.get_mute_time(message.from_user.id)
+    if mute_until:
+        phrase = random.choice(phrases.SLAVE_BUG_DENIED).format(
+            until=mute_until,
+            user_id=message.from_user.id
+        )
+        await message.reply(phrase)
+        return
+
     raw_bug_text = message.text[len(Cmd.BUG):]
     bug_text = raw_bug_text.lstrip(" ,.!:").strip()
 

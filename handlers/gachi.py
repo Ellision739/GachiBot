@@ -45,6 +45,15 @@ async def gachi_ball(message: Message):
 
 @router.message(F.text.lower().startswith(Cmd.NAME))
 async def set_name_handler(message: Message):
+    mute_until = db.get_mute_time(message.from_user.id)
+    if mute_until:
+        phrase = random.choice(phrases.SLAVE_NAME_DENIED).format(
+            until=mute_until,
+            user_id=message.from_user.id
+        )
+        await message.reply(phrase)
+        return
+
     raw_name = message.text[len(Cmd.NAME):]
     new_name = raw_name.lstrip(" ,.!:").strip()
 
@@ -78,13 +87,28 @@ async def sex_handler(message: Message):
 
     s_id = message.from_user.id
     t_id = message.reply_to_message.from_user.id
+
+    # ПРОВЕРКА: Если атакующий — слэйв
+    if db.custom_usernames.get(s_id) == "fucking slave":
+        t_name = db.custom_usernames.get(t_id, message.reply_to_message.from_user.first_name)
+        target = f"<b>{t_name}</b>"
+
+        phrase = random.choice(phrases.SLAVE_SEX_FAILED).format(target=target)
+        await message.reply(phrase, parse_mode="HTML")
+        return
+
     s_name = db.custom_usernames.get(s_id, message.from_user.first_name)
     t_name = db.custom_usernames.get(t_id, message.reply_to_message.from_user.first_name)
 
     sender = f"<a href='tg://user?id={s_id}'>{s_name}</a>"
     target = f"<a href='tg://user?id={t_id}'>{t_name}</a>"
 
-    phrase = random.choice(phrases.SEX_PHRASES).format(sender=sender, target=target)
+    # Если ЦЕЛЬ — слэйв (его доминируют)
+    if db.custom_usernames.get(t_id) == "fucking slave":
+        phrase = random.choice(phrases.SLAVE_SEX_PHRASES).format(sender=sender, target=target)
+    else:
+        phrase = random.choice(phrases.SEX_PHRASES).format(sender=sender, target=target)
+
     await message.answer(phrase, parse_mode="HTML")
 
 
