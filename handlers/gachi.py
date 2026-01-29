@@ -4,9 +4,10 @@ import os
 from aiogram import Router, F
 from aiogram.types import Message, FSInputFile
 from data_manager import db
-import data_manager
 from services import vk_service
 from utils import text_utils
+from strings import phrases
+from services.vk_service import GachiSources
 
 router = Router()
 
@@ -17,7 +18,7 @@ async def choice_handler(message: Message):
         options = [opt.strip() for opt in text.split(" или ") if opt.strip()]
         if len(options) >= 2:
             chosen = random.choice(options).replace("?", "")
-            await message.reply(random.choice(data_manager.CHOICE_PHRASES).format(chosen))
+            await message.reply(random.choice(phrases.CHOICE_PHRASES).format(chosen))
 
 
 @router.message(F.text.lower().contains("гачи шар"))
@@ -33,16 +34,16 @@ async def gachi_ball(message: Message):
             if tr in ["когда", "насколько", "сколько"]:
                 await message.reply(text_utils.dynamic_response(tr))
             else:
-                await message.reply(random.choice(data_manager.SHAR_PHRASES[tr]))
+                await message.reply(random.choice(phrases.SHAR_PHRASES.get(tr, phrases.SHAR_PHRASES[""])))
             return
 
     # Если просто шар
-    await message.reply(random.choice(data_manager.SHAR_PHRASES[""]))
+    await message.reply(random.choice(phrases.SHAR_PHRASES[""]))
 
 
 @router.message(F.text.lower().startswith("гачи имя"))
 async def set_name_handler(message: Message):
-    new_name = message.text[9:].strip()
+    new_name = message.text.replace("гачи имя", "").strip()
 
     if not new_name:
         await message.answer("Укажи имя, например: гачи имя Работяга")
@@ -58,9 +59,9 @@ async def set_name_handler(message: Message):
         await message.answer(f"Понял, буду звать тебя {new_name}, buddy!")
 
 
-@router.message(F.text.lower().contains("гачи цитата"))
+@router.message(F.text.lower().startswith("гачи цитата"))
 async def gachi_quote(message: Message):
-    text, photo = vk_service.get_random_quote(-113661329)
+    text, photo = vk_service.get_random_quote(GachiSources.QUOTE_GROUP)
     if photo:
         await message.answer_photo(photo, caption=text)
     else:
@@ -80,11 +81,11 @@ async def sex_handler(message: Message):
     sender = f"<a href='tg://user?id={s_id}'>{s_name}</a>"
     target = f"<a href='tg://user?id={t_id}'>{t_name}</a>"
 
-    phrase = random.choice(data_manager.SEX_PHRASES).format(sender=sender, target=target)
+    phrase = random.choice(phrases.SEX_PHRASES).format(sender=sender, target=target)
     await message.answer(phrase, parse_mode="HTML")
 
 
-@router.message(F.text.lower().contains("гачи аудио"))
+@router.message(F.text.lower().startswith("гачи аудио"))
 async def audio_cmd(message: Message):
     music_dir = "music"
 
@@ -103,10 +104,9 @@ async def audio_cmd(message: Message):
     )
 
 
-@router.message(F.text.lower().contains("гачи видео"))
+@router.message(F.text.lower().startswith("гачи видео"))
 async def video_cmd(message: Message):
-    # Нам нужен только второй аргумент (ссылка)
-    _, video_data = vk_service.get_video_content(-150683496)
+    _, video_data = vk_service.get_video_content(GachiSources.VIDEO_GROUP)
 
     if video_data:
         await message.answer(f"Держи, buddy: {video_data}")
@@ -114,9 +114,9 @@ async def video_cmd(message: Message):
         await message.answer("Босс качалки скрыл все записи.")
 
 
-@router.message(F.text.lower().contains("гачи флекс"))
+@router.message(F.text.lower().startswith("гачи флекс"))
 async def flex_cmd(message: Message):
-    _, flex_data = vk_service.get_video_content(-165104294)
+    _, flex_data = vk_service.get_video_content(GachiSources.FLEX_GROUP)
 
     if flex_data:
         await message.answer(f'Держи, buddy: {flex_data}')
