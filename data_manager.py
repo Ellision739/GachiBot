@@ -17,17 +17,19 @@ class GachiDataManager:
         self.BAN_WORDS_FILE = "data/ban_words.json"
         self.SILENT_CHATS_FILE = "data/silent_chats.json"
         self.SLAVE_STATS_FILE = "data/slave_stats.json"
+        self.UPDATES_FILE = "data/updates.json"
 
         # Инструменты асинхронности
         self._executor = ThreadPoolExecutor(max_workers=3)
         self._lock = asyncio.Lock()
 
-        # 3. Загрузка данных
+        # Загрузка данных
         self.custom_usernames = {int(k): v for k, v in self._load_json(self.USERNAMES_FILE, {}).items()}
         self.seen_ids = set(map(int, self._load_json(self.SEEN_IDS_FILE, [])))
         self.silent_chats = set(self._load_json(self.SILENT_CHATS_FILE, []))
         self.ban_words = self._load_json(self.BAN_WORDS_FILE, ["шаман", "шамов", "данил", "даниил"])
         self.slave_stats = {int(k): v for k, v in self._load_json(self.SLAVE_STATS_FILE, {}).items()}
+        self.updates = self._load_json(self.UPDATES_FILE, [])
 
     def _load_json(self, file, default):
         """Внутренний метод для загрузки (синхронный, т.к. только при старте)"""
@@ -115,6 +117,16 @@ class GachiDataManager:
             # Возвращаем сколько осталось или до какого времени
             return until.strftime("%H:%M %d.%m")
         return None
+    #
+    # def reload_updates(self):
+    #     try:
+    #         new_data = self._load_json(self.UPDATES_FILE, [])
+    #         self.updates = new_data
+    #         logger.info(f"Журнал обновлений перечитан. Найдено записей: {len(self.updates)}")
+    #         return True
+    #     except Exception as e:
+    #         logger.error(f"Ошибка при перезагрузке обновлений: {e}")
+    #         return False
 
 
 db = GachiDataManager()

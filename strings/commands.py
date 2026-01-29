@@ -14,6 +14,7 @@ class GachiCommands:
     QUOTE = "гачи цитата"
     SEX = "гачи секс"
     NAME = "гачи имя"
+    UPDATES = "гачи обнова"
 
     # Контент
     VIDEO = "гачи видео"

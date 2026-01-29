@@ -5,12 +5,16 @@ from strings import phrases
 from data_manager import db
 import random
 
+import os
+import json
+
 router = Router()
 
 @router.message(F.text.lower() == Cmd.HELP)
 async def help_cmd(message: Message):
     await message.answer(
-        "В круглых скобках указаны обязательные параметры, в квадратных - необязательные. Сами скобки писать не нужно.\n\n"
+        "В круглых скобках указаны обязательные параметры, в квадратных - необязательные. "
+        "Сами скобки писать не нужно.\n\n"
         
         "Ответы от бота:\n"
         "гачи шар, (вопрос) — ответ на вопрос\n"
@@ -28,16 +32,41 @@ async def help_cmd(message: Message):
         "гачи баг (текст бага) — баг-репорт или просто связь с разрабом"
     )
 
+
+@router.message(F.text.lower() == Cmd.UPDATES)
+async def show_updates(message: Message):
+    current_updates = db._load_json(db.UPDATES_FILE, [])
+
+    if not current_updates:
+        return await message.answer("Пока обновлений не завезли, buddy.")
+
+    text = "<b>GachiBot: Журнал обновлений</b>\n\n"
+
+    # Берем последние 5 обновлений для вывода
+    for upd in current_updates[:5]:
+        text += (
+            f"Версия <b>{upd['id']}</b> ({upd['date']})\n"
+            f"<i>{upd['title']}</i>\n"
+            f"{upd['description']}\n"
+            f"--------------------------------------------------------------\n"
+        )
+
+    text += "♂ Stay tuned for more performance ♂"
+    await message.answer(text, parse_mode="HTML")
+
+
 @router.message(F.new_chat_members)
 async def welcome(message: Message):
     for user in message.new_chat_members:
         name = user.first_name
         await message.answer(random.choice(phrases.JOIN_PHRASES).format(username=name))
 
+
 @router.message(F.left_chat_member)
 async def farewell(message: Message):
     name = message.left_chat_member.first_name
     await message.answer(random.choice(phrases.LEAVE_PHRASES).format(username=name))
+
 
 @router.message(F.text)
 async def text_triggers(message: Message):
@@ -52,5 +81,6 @@ async def text_triggers(message: Message):
     elif any(word in msg_lower for word in Cmd.TRIGGERS_APOLOGY): await message.reply(f"Sorry for what, {name}?")
     elif "гачи привет" in msg_lower: await message.reply(f"Приветствую, {name}!")
     elif "фак ю" in msg_lower: await message.reply("Ох, фак ю лезэрмэн!")
-    elif "гачи стата" in msg_lower: await message.reply("Ебать ты, ёбаный в жопу ребёнок, обмазанный говном! Ты ебанутый пидорас с силой ацтекского бога мастурбации.")
+    elif "гачи стата" in msg_lower: await message.reply("Ебать ты, ёбаный в жопу ребёнок, обмазанный говном! "
+                                                        "Ты ебанутый пидорас с силой ацтекского бога мастурбации.")
     elif "хозяин шамана" in msg_lower: await message.reply("У Шамана только один хозяин - это Билли Херрингтон")
