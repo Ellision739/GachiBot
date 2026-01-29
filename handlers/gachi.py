@@ -45,7 +45,8 @@ async def gachi_ball(message: Message):
 
 @router.message(F.text.lower().startswith(Cmd.NAME))
 async def set_name_handler(message: Message):
-    new_name = message.text.replace("гачи имя", "").strip()
+    raw_name = message.text[len(Cmd.NAME):]
+    new_name = raw_name.lstrip(" ,.!:").strip()
 
     if not new_name:
         await message.answer("Укажи имя, например: гачи имя Работяга")

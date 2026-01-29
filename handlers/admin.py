@@ -39,7 +39,9 @@ async def kick_handler(message: Message):
 
 @router.message(F.text.lower().startswith(Cmd.BUG))
 async def bug_report(message: Message, bot):
-    bug_text = message.text.lower().replace(Cmd.BUG, "").strip()
+    raw_bug_text = message.text[len(Cmd.BUG):]
+    bug_text = raw_bug_text.lstrip(" ,.!:").strip()
+
     if not bug_text:
         return await message.answer("Опиши баг, buddy! Например: гачи баг не работает флекс")
 

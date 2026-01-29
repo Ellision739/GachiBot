@@ -22,7 +22,7 @@ class GachiDataManager:
 
         # 3. Загрузка данных
         self.custom_usernames = {int(k): v for k, v in self._load_json(self.USERNAMES_FILE, {}).items()}
-        self.seen_ids = set(map(str, self._load_json(self.SEEN_IDS_FILE, [])))
+        self.seen_ids = set(map(int, self._load_json(self.SEEN_IDS_FILE, [])))
         self.silent_chats = set(self._load_json(self.SILENT_CHATS_FILE, []))
         self.ban_words = self._load_json(self.BAN_WORDS_FILE, ["шаман", "шамов", "данил", "даниил"])
 
