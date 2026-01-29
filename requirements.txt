@@ -1,0 +1,5 @@
+aiogram==3.24.0
+pydantic==2.12.5
+pydantic_settings==2.12.0
+pytest==9.0.2
+vk_api==11.10.0
