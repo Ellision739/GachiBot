@@ -1,11 +1,12 @@
 import asyncio
-import os
 import logging
 from aiogram import Bot, Dispatcher
-from dotenv import load_dotenv
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
 
 import middlewares
 from handlers import common, gachi, admin
+from config import config
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,19 +19,27 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+
 async def main():
     try:
-        load_dotenv()
-        bot = Bot(token=os.getenv("BOT_TOKEN"))
+        bot = Bot(
+            token=config.bot_token.get_secret_value(),
+            default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+        )
         dp = Dispatcher()
 
         dp.message.outer_middleware(middlewares.GachiMiddleware())
+
         dp.include_routers(admin.router, gachi.router, common.router)
 
         logger.info("Dungeon Master заходит в качалку... (Бот запущен)")
+
+        await bot.delete_webhook(drop_pending_updates=True)
         await dp.start_polling(bot)
+
     except Exception as e:
         logger.critical(f"Бот упал при запуске: {e}")
+
 
 if __name__ == "__main__":
     try:

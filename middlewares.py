@@ -1,18 +1,27 @@
 import logging
 import os
 import asyncio
+from typing import Any, Callable, Dict, Awaitable
+
 from aiogram import BaseMiddleware
 from aiogram.types import Message, FSInputFile
+
 from data_manager import db
+from strings.commands import GachiCommands as Cmd
 
 logger = logging.getLogger(__name__)
 
 
 class GachiMiddleware(BaseMiddleware):
-    async def __call__(self, handler, event: Message, data):
+    async def __call__(
+            self,
+            handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
+            event: Message,
+            data: Dict[str, Any]
+    ) -> Any:
         try:
-            # Проверка на None для безопасности
-            if not event or not event.from_user:
+            # Проверка на технические сообщения
+            if not isinstance(event, Message) or not event.from_user:
                 return await handler(event, data)
 
             text = event.text or event.caption or ""
@@ -20,25 +29,26 @@ class GachiMiddleware(BaseMiddleware):
 
             # Молчанка
             if event.chat.id in db.silent_chats:
-                if "гачи помолчи" not in text_lower:
+                if Cmd.MUTE not in text_lower:
                     return
 
             # Приветствие
-            user_id = str(event.from_user.id)
+            user_id = event.from_user.id
+
             if user_id not in db.seen_ids:
                 db.seen_ids.add(user_id)
 
-                # Сохраняем в фоне
-                _task = asyncio.create_task(db.save_data("seen_ids"))
+                asyncio.create_task(db.save_data("seen_ids"))
 
                 try:
-                    await event.answer('Welcome to the club, buddy! Напиши "гачи помощь".')
+                    await event.answer(f'Welcome to the club, buddy! Напиши "{Cmd.HELP}".')
 
                     photo_path = "Gachi privetstvie.jpg"
                     if os.path.exists(photo_path):
                         await event.answer_photo(FSInputFile(photo_path))
+
                 except Exception as send_error:
-                    logger.warning(f"Не удалось отправить приветствие пользователю {user_id}: {send_error}")
+                    logger.warning(f"Не удалось поприветствовать {user_id}: {send_error}")
 
         except Exception as e:
             logger.error(f"Ошибка в GachiMiddleware: {e}", exc_info=True)
