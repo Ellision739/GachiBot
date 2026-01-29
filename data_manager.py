@@ -2,6 +2,7 @@ import json
 import os
 import asyncio
 import logging
+import shutil
 from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger(__name__)
@@ -58,6 +59,9 @@ class GachiDataManager:
             def _write():
                 try:
                     os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                    if os.path.exists(file_path):
+                        shutil.copy2(file_path, f"{file_path}.bak")
+                        
                     with open(file_path, "w", encoding="utf-8") as f:
                         json.dump(data, f, ensure_ascii=False, indent=2)
                 except Exception as e:
