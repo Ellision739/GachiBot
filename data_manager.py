@@ -1,23 +1,42 @@
 import json
 import os
+import asyncio
+import logging
+from concurrent.futures import ThreadPoolExecutor
 
 USERNAMES_FILE = "data/custom_usernames.json"
 SEEN_IDS_FILE = "data/seen_ids.json"
 BAN_WORDS_FILE = "data/ban_words.json"
 
+logger = logging.getLogger(__name__)
+_executor = ThreadPoolExecutor(max_workers=3)
+
+
 def load_json(file, default):
     if os.path.exists(file):
-        with open(file, "r", encoding="utf-8") as f:
-            try:
+        try:
+            with open(file, "r", encoding="utf-8") as f:
                 return json.load(f)
-            except:
-                return default
+        except Exception as e:
+            logger.error(f"Ошибка при загрузке {file}: {e}")
+            return default
     return default
 
-def save_json(file, data):
-    os.makedirs(os.path.dirname(file), exist_ok=True)
-    with open(file, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+
+async def save_json_async(file, data):
+    loop = asyncio.get_running_loop()
+
+    def _save():
+        try:
+            os.makedirs(os.path.dirname(file), exist_ok=True)
+            with open(file, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+        except PermissionError:
+            logger.error(f"Нет прав на запись файла {file}!")
+        except Exception as e:
+            logger.error(f"Критическая ошибка при сохранении {file}: {e}")
+
+    await loop.run_in_executor(_executor, _save)
 
 # Глобальные переменные данных
 custom_usernames = {int(k): v for k, v in load_json(USERNAMES_FILE, {}).items()}
@@ -27,45 +46,42 @@ silent_chats = set()
 ban_words = load_json(BAN_WORDS_FILE, ["шаман", "шамов", "данил", "даниил"])
 
 # Фразы шара
-SHAR_PHRASES = {
-    "почему": [
-        "Потому что тебя все никак не трахнут",
-        "Потому что Билли умер за наши грехи",
-        "Потому что кожу содрал",
-        "Потому что дверью ошибся",
-        "Потому что ты забываешь о том, чему учил наш батя",
-        "Потому что танец станцевал",
-        "Потому что в фуру к трахобойщикам сел",
-        "Потому что пароль oralcumshot поставил",
-        "Потому что в качалку не пошёл",
-        "Потому что очко не прикрыл",
-        "Потому что ты fucken slave!",
-        "Потому что ты избранный!",
-        "Потому что кожанку одел",
-        "Потому что гачи — это судьба",
-        "Потому что так сказал Билли",
-        "Потому что в подвале не спрашивают",
-        "Потому что ремень был снят первым"
-    ],
+REASON_PHRASES = [
+    "Потому что тебя все никак не трахнут",
+    "Потому что Билли умер за наши грехи",
+    "Потому что кожу содрал",
+    "Потому что дверью ошибся",
+    "Потому что ты забываешь о том, чему учил наш батя",
+    "Потому что танец станцевал",
+    "Потому что в фуру к трахобойщикам сел",
+    "Потому что пароль oralcumshot поставил",
+    "Потому что в качалку не пошёл",
+    "Потому что очко не прикрыл",
+    "Потому что ты fucken slave!",
+    "Потому что ты избранный!",
+    "Потому что кожанку одел",
+    "Потому что гачи — это судьба",
+    "Потому что так сказал Билли",
+    "Потому что в подвале не спрашивают",
+    "Потому что ремень был снят первым"
+]
 
-    "зачем": [
-        "Потому что тебя все никак не трахнут",
-        "Потому что Билли умер за наши грехи",
-        "Потому что кожу содрал",
-        "Потому что дверью ошибся",
-        "Потому что ты забываешь о том, чему учил наш батя",
-        "Потому что танец станцевал",
-        "Потому что в фуру к трахобойщикам сел",
-        "Потому что пароль oralcumshot поставил",
-        "Потому что в качалку не пошёл",
-        "Потому что очко не прикрыл",
-        "Потому что ты fucken slave!",
-        "Потому что ты избранный!",
-        "Потому что кожанку одел",
-        "Потому что гачи — это судьба",
-        "Потому что так сказал Билли",
-        "Потому что в подвале не спрашивают",
-        "Потому что ремень был снят первым"
+SHAR_PHRASES = {
+    "почему": REASON_PHRASES,
+
+    "зачем": REASON_PHRASES,
+
+    "куда": [
+        "В Leather Club, который на два блока ниже",
+        "В Deep Dark Fantasies",
+        "Прямиком в раздевалку",
+        "В душ за 300 баксов",
+        "На скамью для жима",
+        "В подвал к Dungeon Master'у",
+        "В качалку, качать булки",
+        "К Ван Даркхолму на кастинг",
+        "В самый центр гачи-ремикса",
+        "На поиски потерянного масла для тела"
     ],
 
     "как": [
@@ -105,7 +121,8 @@ SHAR_PHRASES = {
         "Лика Ширикова",
         "Игорь (тот самый)",
         "Босс этой качалки",
-        "Крепкий парень с гачи-опытом"
+        "Крепкий парень с гачи-опытом",
+        "Гачи бот"
     ],
 
     "": [

@@ -1,40 +1,39 @@
 import asyncio
 import os
+import logging
 from aiogram import Bot, Dispatcher
-from aiogram.types import FSInputFile
 from dotenv import load_dotenv
 
-import data_manager
+import middlewares
 from handlers import common, gachi, admin
 
-load_dotenv()
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("bot_log.log"),
+        logging.StreamHandler()
+    ]
+)
 
+logger = logging.getLogger(__name__)
 
 async def main():
-    bot = Bot(token=os.getenv("BOT_TOKEN"))
-    dp = Dispatcher()
+    try:
+        load_dotenv()
+        bot = Bot(token=os.getenv("BOT_TOKEN"))
+        dp = Dispatcher()
 
-    @dp.message.outer_middleware()
-    async def global_middleware(handler, event, data):
-        # Логика молчанки
-        if event.chat.id in data_manager.silent_chats and "гачи помолчи" not in event.text.lower():
-            return
+        dp.message.outer_middleware(middlewares.GachiMiddleware())
+        dp.include_routers(admin.router, gachi.router, common.router)
 
-        # Логика приветствия
-        u_id = event.from_user.id
-        if str(u_id) not in data_manager.seen_ids:
-            data_manager.seen_ids.add(str(u_id))
-            data_manager.save_json(data_manager.SEEN_IDS_FILE, list(data_manager.seen_ids))
-
-            await event.answer('Welcome to the club, buddy! Чтобы узнать мои возможности, напиши "гачи помощь"!')
-            if os.path.exists("Gachi privetstvie.jpg"):
-                await event.answer_photo(FSInputFile("Gachi privetstvie.jpg"))
-
-        return await handler(event, data)
-
-    dp.include_routers(admin.router, gachi.router, common.router)
-    await dp.start_polling(bot)
-
+        logger.info("Dungeon Master заходит в качалку... (Бот запущен)")
+        await dp.start_polling(bot)
+    except Exception as e:
+        logger.critical(f"Бот упал при запуске: {e}")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except (KeyboardInterrupt, SystemExit):
+        logger.info("Бот остановлен.")
