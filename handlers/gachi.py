@@ -54,7 +54,7 @@ async def set_name_handler(message: Message):
         data_manager.custom_usernames[message.from_user.id] = new_name
         await message.answer(f"Понял, буду звать тебя {new_name}")
 
-    data_manager.save_json(data_manager.USERNAMES_FILE, data_manager.custom_usernames)
+    await data_manager.save_json_async(data_manager.USERNAMES_FILE, data_manager.custom_usernames)
 
 
 @router.message(F.text.lower().contains("гачи цитата"))

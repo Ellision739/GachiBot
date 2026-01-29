@@ -29,7 +29,7 @@ class GachiMiddleware(BaseMiddleware):
                 data_manager.seen_ids.add(user_id)
 
                 # Сохраняем в фоне
-                asyncio.create_task(
+                _task = asyncio.create_task(
                     data_manager.save_json_async(data_manager.SEEN_IDS_FILE, list(data_manager.seen_ids)))
 
                 try:

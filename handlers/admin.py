@@ -68,9 +68,9 @@ async def gachi_ban(message: Message):
         word_to_ban = old_name.lower()
         if word_to_ban not in data_manager.ban_words:
             data_manager.ban_words.append(word_to_ban)
-            data_manager.save_json(data_manager.BAN_WORDS_FILE, data_manager.ban_words)
+            await data_manager.save_json_async(data_manager.BAN_WORDS_FILE, data_manager.ban_words)
 
     data_manager.custom_usernames[target_id] = "нигер грязный"
-    data_manager.save_json(data_manager.USERNAMES_FILE, data_manager.custom_usernames)
+    await data_manager.save_json_async(data_manager.USERNAMES_FILE, data_manager.custom_usernames)
 
     await message.answer("Факен слэйв понижен до нигера грязного")
