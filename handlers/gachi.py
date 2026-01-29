@@ -8,12 +8,14 @@ from services import vk_service
 from utils import text_utils
 from strings import phrases
 from services.vk_service import GachiSources
+from strings.commands import GachiCommands as Cmd
+from config import config
 
 router = Router()
 
 @router.message(F.text.lower().contains(" или "))
 async def choice_handler(message: Message):
-    if "гачи шар" in message.text.lower():
+    if Cmd.BALL in message.text.lower():
         text = message.text.lower().replace("гачи шар", "").strip()
         options = [opt.strip() for opt in text.split(" или ") if opt.strip()]
         if len(options) >= 2:
@@ -21,7 +23,7 @@ async def choice_handler(message: Message):
             await message.reply(random.choice(phrases.CHOICE_PHRASES).format(chosen))
 
 
-@router.message(F.text.lower().contains("гачи шар"))
+@router.message(F.text.lower().contains(Cmd.BALL))
 async def gachi_ball(message: Message):
     msg = message.text.lower()
 
@@ -41,7 +43,7 @@ async def gachi_ball(message: Message):
     await message.reply(random.choice(phrases.SHAR_PHRASES[""]))
 
 
-@router.message(F.text.lower().startswith("гачи имя"))
+@router.message(F.text.lower().startswith(Cmd.NAME))
 async def set_name_handler(message: Message):
     new_name = message.text.replace("гачи имя", "").strip()
 
@@ -59,7 +61,7 @@ async def set_name_handler(message: Message):
         await message.answer(f"Понял, буду звать тебя {new_name}, buddy!")
 
 
-@router.message(F.text.lower().startswith("гачи цитата"))
+@router.message(F.text.lower().startswith(Cmd.QUOTE))
 async def gachi_quote(message: Message):
     text, photo = vk_service.get_random_quote(GachiSources.QUOTE_GROUP)
     if photo:
@@ -68,7 +70,7 @@ async def gachi_quote(message: Message):
         await message.answer(text)
 
 
-@router.message(F.text.lower().startswith("гачи секс"))
+@router.message(F.text.lower().startswith(Cmd.SEX))
 async def sex_handler(message: Message):
     if not message.reply_to_message:
         return await message.answer("Чтобы совершить акт, ответь на сообщение партнера!")
@@ -85,7 +87,7 @@ async def sex_handler(message: Message):
     await message.answer(phrase, parse_mode="HTML")
 
 
-@router.message(F.text.lower().startswith("гачи аудио"))
+@router.message(F.text.lower().startswith(Cmd.AUDIO))
 async def audio_cmd(message: Message):
     music_dir = "music"
 
@@ -104,7 +106,7 @@ async def audio_cmd(message: Message):
     )
 
 
-@router.message(F.text.lower().startswith("гачи видео"))
+@router.message(F.text.lower().startswith(Cmd.VIDEO))
 async def video_cmd(message: Message):
     _, video_data = vk_service.get_video_content(GachiSources.VIDEO_GROUP)
 
@@ -114,7 +116,7 @@ async def video_cmd(message: Message):
         await message.answer("Босс качалки скрыл все записи.")
 
 
-@router.message(F.text.lower().startswith("гачи флекс"))
+@router.message(F.text.lower().startswith(Cmd.FLEX))
 async def flex_cmd(message: Message):
     _, flex_data = vk_service.get_video_content(GachiSources.FLEX_GROUP)
 

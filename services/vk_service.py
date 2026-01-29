@@ -1,7 +1,8 @@
 import vk_api
 import random
 import logging
-from config import Config
+from typing import Optional, Tuple
+from config import config
 
 logger = logging.getLogger(__name__)
 
@@ -11,13 +12,13 @@ class GachiSources:
     FLEX_GROUP = -165104294
 
 
-vk_session = vk_api.VkApi(token=Config.VK_TOKEN)
+vk_session = vk_api.VkApi(token=config.vk_user_token.get_secret_value())
 vk = vk_session.get_api()
 
 
-def get_random_quote(owner_id):
+def get_random_quote(owner_id: int) -> Tuple[Optional[str], Optional[str]]:
     try:
-        response = vk.wall.get(owner_id=owner_id, count=Config.VK_POST_COUNT)
+        response = vk.wall.get(owner_id=owner_id, count=config.vk_post_count)
         posts = response.get('items', [])
 
         if not posts:
@@ -30,17 +31,17 @@ def get_random_quote(owner_id):
 
             for att in attachments:
                 if att['type'] == 'photo':
-                    photo_url = att['photo']['sizes'][-1]['url']
-                    return text, photo_url
+                    return text, att['photo']['sizes'][-1]['url']
 
         return "Цитата без фото", None
     except Exception as e:
+        logger.error(f"Ошибка ВК: {e}")
         return f"Ошибка ВК: {e}", None
 
 
-def get_video_content(owner_id):
+def get_video_content(owner_id: int) -> Tuple[None, Optional[str]]:
     try:
-        response = vk.video.get(owner_id=owner_id, count=Config.VK_POST_COUNT)
+        response = vk.video.get(owner_id=owner_id, count=config.vk_post_count)
         videos = response.get('items', [])
 
         if not videos:
@@ -52,5 +53,5 @@ def get_video_content(owner_id):
 
         return None, f"{title}\n{video_url}"
     except Exception as e:
-        print(f"Ошибка получения видео: {e}")
+        logger.error(f"Ошибка получения видео: {e}")
         return None, None

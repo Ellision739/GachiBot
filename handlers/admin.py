@@ -1,15 +1,16 @@
+import random
 from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.exceptions import TelegramBadRequest
 from data_manager import db
-from config import Config
+from config import config
 from strings import phrases
-import random
+from strings.commands import GachiCommands as Cmd
 
 router = Router()
 
 
-@router.message(F.text.lower().contains("гачи помолчи"))
+@router.message(F.text.lower().contains(Cmd.MUTE))
 async def silent_mode(message: Message):
     if message.chat.id in db.silent_chats:
         db.silent_chats.remove(message.chat.id)
@@ -21,7 +22,7 @@ async def silent_mode(message: Message):
         await message.answer("Понял, молчу")
 
 
-@router.message(F.text.lower().startswith("гачи кик"))
+@router.message(F.text.lower().startswith(Cmd.KICK))
 async def kick_handler(message: Message):
     if not message.reply_to_message:
         return await message.answer("Укажи пользователя ответом на его сообщение!")
@@ -36,22 +37,22 @@ async def kick_handler(message: Message):
     except TelegramBadRequest as e:
         await message.answer(random.choice(phrases.GACHI_ERRORS))
 
-@router.message(F.text.lower().startswith("гачи баг"))
+@router.message(F.text.lower().startswith(Cmd.BUG))
 async def bug_report(message: Message, bot):
-    bug_text = message.text.lower().replace("гачи баг", "").strip()
+    bug_text = message.text.lower().replace(Cmd.BUG, "").strip()
     if not bug_text:
         return await message.answer("Опиши баг, buddy! Например: гачи баг не работает флекс")
 
     u_id = message.from_user.id
     name = db.custom_usernames.get(u_id, message.from_user.first_name)
 
-    await bot.send_message(Config.ADMIN_ID, f"Новый баг от {name} (ID: {message.from_user.id}):\n{bug_text}")
+    await bot.send_message(config.admin_id, f"Новый баг от {name} (ID: {message.from_user.id}):\n{bug_text}")
     await message.answer("Отправлено главному данжен мастеру!")
 
 
-@router.message(F.text.lower().startswith("гачи бан"))
+@router.message(F.text.lower().startswith(Cmd.BAN))
 async def gachi_ban(message: Message):
-    if message.from_user.id != Config.ADMIN_ID:
+    if message.from_user.id != config.admin_id:
         return await message.answer("Доступно только главному данжен мастеру")
 
     if not message.reply_to_message:
