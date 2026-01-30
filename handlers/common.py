@@ -52,6 +52,20 @@ async def show_updates(message: Message):
     await message.answer(text, parse_mode="HTML")
 
 
+def normalize_text(text: str) -> str:
+    """Заменяет английские омографы на русские аналоги и убирает лишние символы"""
+    replacements = {
+        'a': 'а', 'b': 'в', 'e': 'е', 'k': 'к', 'm': 'м', 'h': 'н',
+        'o': 'о', 'p': 'р', 'c': 'с', 't': 'т', 'y': 'у', 'x': 'х'
+    }
+
+    text = text.lower()
+    for eng, rus in replacements.items():
+        text = text.replace(eng, rus)
+
+    return text
+
+
 @router.message(F.new_chat_members)
 async def welcome(message: Message):
     for user in message.new_chat_members:
@@ -67,13 +81,17 @@ async def farewell(message: Message):
 
 @router.message(F.text)
 async def text_triggers(message: Message):
-    msg_lower = message.text.lower()
-    name = db.custom_usernames.get(message.from_user.id, message.from_user.first_name)
+    raw_text = message.text.lower()
 
-    if any(word in msg_lower for word in Cmd.TRIGGERS_APOLOGY):
-        return await message.reply(f"Sorry for what, {name}?")
+    msg_normalized = normalize_text(raw_text)
+
+    u_id = message.from_user.id
+    name = db.custom_usernames.get(u_id, message.from_user.first_name)
 
     for key, action in Cmd.ALL_TRIGGERS.items():
-        if key in msg_lower:
+        if key in msg_normalized:
             response = action(name) if callable(action) else action
             return await message.reply(response)
+
+    if any(word in msg_normalized for word in Cmd.TRIGGERS_APOLOGY):
+        return await message.reply(f"Sorry for what, {name}?")

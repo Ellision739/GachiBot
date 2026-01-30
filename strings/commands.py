@@ -22,7 +22,7 @@ class GachiCommands:
     AUDIO = "гачи аудио"
 
     # Триггеры
-    TRIGGERS_APOLOGY = ["извин", "прости", "sorry", "сори"]
+    TRIGGERS_APOLOGY = ["извин", "прости", "sorry", "сори", "сорян"]
     TRIGGER_HELLO = {
         "гачи привет": lambda name: f"Приветствую, {name}!"
     }
