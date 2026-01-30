@@ -5,9 +5,6 @@ from strings import phrases
 from data_manager import db
 import random
 
-import os
-import json
-
 router = Router()
 
 @router.message(F.text.lower() == Cmd.HELP)
@@ -71,16 +68,12 @@ async def farewell(message: Message):
 @router.message(F.text)
 async def text_triggers(message: Message):
     msg_lower = message.text.lower()
-    u_id = message.from_user.id
-    name = db.custom_usernames.get(u_id, message.from_user.first_name)
+    name = db.custom_usernames.get(message.from_user.id, message.from_user.first_name)
 
-    if "сос" in msg_lower: await message.reply(f"Сам соси, {name}")
-    elif "ебать ты" in msg_lower: await message.reply(f"Нет, ебать ты, {name}!")
-    elif "иди нахуй" in msg_lower: await message.reply(f"Сам иди нахуй, {name}")
-    elif "fuck you" in msg_lower: await message.reply(f"Oh, fuck you, {name}!")
-    elif any(word in msg_lower for word in Cmd.TRIGGERS_APOLOGY): await message.reply(f"Sorry for what, {name}?")
-    elif "гачи привет" in msg_lower: await message.reply(f"Приветствую, {name}!")
-    elif "фак ю" in msg_lower: await message.reply("Ох, фак ю лезэрмэн!")
-    elif "гачи стата" in msg_lower: await message.reply("Ебать ты, ёбаный в жопу ребёнок, обмазанный говном! "
-                                                        "Ты ебанутый пидорас с силой ацтекского бога мастурбации.")
-    elif "хозяин шамана" in msg_lower: await message.reply("У Шамана только один хозяин - это Билли Херрингтон")
+    if any(word in msg_lower for word in Cmd.TRIGGERS_APOLOGY):
+        return await message.reply(f"Sorry for what, {name}?")
+
+    for key, action in Cmd.ALL_TRIGGERS.items():
+        if key in msg_lower:
+            response = action(name) if callable(action) else action
+            return await message.reply(response)
