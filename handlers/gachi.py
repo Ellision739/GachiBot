@@ -7,7 +7,7 @@ from data_manager import db
 from services import vk_service
 from utils import text_utils
 from strings import phrases
-from services.vk_service import GachiSources
+from services.vk_service import vk_service
 from strings.commands import GachiCommands as Cmd
 from config import config
 
@@ -73,7 +73,7 @@ async def set_name_handler(message: Message):
 
 @router.message(F.text.lower().startswith(Cmd.QUOTE))
 async def gachi_quote(message: Message):
-    text, photo = vk_service.get_random_quote(GachiSources.QUOTE_GROUP)
+    text, photo = await vk_service.get_random_quote(vk_service.QUOTE_GROUP)
     if photo:
         await message.answer_photo(photo, caption=text)
     else:
@@ -133,7 +133,7 @@ async def audio_cmd(message: Message):
 
 @router.message(F.text.lower().startswith(Cmd.VIDEO))
 async def video_cmd(message: Message):
-    _, video_data = vk_service.get_video_content(GachiSources.VIDEO_GROUP)
+    _, video_data = await vk_service.get_video_content(vk_service.VIDEO_GROUP)
 
     if video_data:
         await message.answer(f"Держи, buddy: {video_data}")
@@ -143,7 +143,7 @@ async def video_cmd(message: Message):
 
 @router.message(F.text.lower().startswith(Cmd.FLEX))
 async def flex_cmd(message: Message):
-    _, flex_data = vk_service.get_video_content(GachiSources.FLEX_GROUP)
+    _, flex_data = await vk_service.get_video_content(vk_service.FLEX_GROUP)
 
     if flex_data:
         await message.answer(f'Держи, buddy: {flex_data}')
