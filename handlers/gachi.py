@@ -30,11 +30,23 @@ async def gachi_ball(message: Message):
     if re.search(r"да\?$", msg): return await message.reply("пизда!")
     if re.search(r"да$", msg): return await message.reply("пизда")
 
-    triggers = ["почему", "зачем", "как", "где", "кто", "когда", "насколько", "сколько"]
+    triggers = ["почему", "зачем", "как", "где", "кто", "когда", "насколько", "сколько", "хочешь", "поговори",
+                "расскажи", "ты", "что", "какой", "откуда", "чей"]
     for tr in triggers:
         if tr in msg:
-            if tr in ["когда", "насколько", "сколько"]:
+            if tr in ["когда", "насколько", "сколько", "во сколько"]:
                 await message.reply(text_utils.dynamic_response(tr))
+            elif tr == "чей" and random.random() < 0.5:
+                who_list = phrases.SHAR_PHRASES.get("кто", ["какой-то jabroni"])
+                person = random.choice(who_list)
+
+                templates = [
+                    f"Обладатель — {person}",
+                    f"Это принадлежит {person}",
+                    f"Хозяин этого — {person}",
+                    f"Собственность {person}"
+                ]
+                await message.reply(random.choice(templates))
             else:
                 await message.reply(random.choice(phrases.SHAR_PHRASES.get(tr, phrases.SHAR_PHRASES[""])))
             return

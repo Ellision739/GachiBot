@@ -12,14 +12,22 @@ router = Router()
 
 @router.message(F.text.lower().contains(Cmd.MUTE))
 async def silent_mode(message: Message):
+    u_id = message.from_user.id
+
+    if db.custom_usernames.get(u_id) == "fucking slave":
+        return await message.reply(
+            "Fucking slave не имеет права голоса! "
+            "Твоё дело — слушаться, а не командовать тишиной."
+        )
+
     if message.chat.id in db.silent_chats:
         db.silent_chats.remove(message.chat.id)
-        await db.save_data("silent_chats")
         await message.answer("Гачибот снова будет радовать работяг!")
     else:
         db.silent_chats.add(message.chat.id)
-        await db.save_data("silent_chats")
-        await message.answer("Понял, молчу")
+        await message.answer("Понял, молчу ")
+
+    db._needs_save = True
 
 
 @router.message(F.text.lower().startswith(Cmd.KICK))

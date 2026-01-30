@@ -3,7 +3,7 @@ import datetime
 
 
 def dynamic_response(trigger):
-    if trigger == "когда":
+    if trigger == "когда" or trigger == "во сколько":
         # Генерируем случайную дату до 90 дней
         future_date = datetime.datetime.now() + datetime.timedelta(
             days=random.randint(0, 90),
