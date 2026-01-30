@@ -7,6 +7,7 @@ from aiogram.enums import ParseMode
 import middlewares
 from handlers import common, gachi, admin
 from config import config
+from data_manager import db
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,8 +35,16 @@ async def main():
 
         logger.info("Dungeon Master заходит в качалку... (Бот запущен)")
 
+        save_task = asyncio.create_task(db.auto_save_loop(interval=600))
+
         await bot.delete_webhook(drop_pending_updates=True)
-        await dp.start_polling(bot)
+
+        try:
+            await dp.start_polling(bot)
+        finally:
+            logger.info("Завершение работы. Сохраняем данные...")
+            await db.save_all()  # Принудительное сохранение перед смертью
+            save_task.cancel()
 
     except Exception as e:
         logger.critical(f"Бот упал при запуске: {e}")

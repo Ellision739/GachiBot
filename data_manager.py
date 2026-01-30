@@ -30,6 +30,7 @@ class GachiDataManager:
         self.ban_words = self._load_json(self.BAN_WORDS_FILE, ["шаман", "шамов", "данил", "даниил"])
         self.slave_stats = {int(k): v for k, v in self._load_json(self.SLAVE_STATS_FILE, {}).items()}
         self.updates = self._load_json(self.UPDATES_FILE, [])
+        self._needs_save = False
 
     def _load_json(self, file, default):
         """Внутренний метод для загрузки (синхронный, т.к. только при старте)"""
@@ -75,6 +76,30 @@ class GachiDataManager:
 
             await loop.run_in_executor(self._executor, _write)
 
+    async def auto_save_loop(self, interval=600):
+        """Фоновая задача: сохраняет всё на диск раз в 10 минут, если были изменения"""
+        logger.info("Цикл автосохранения запущен.")
+        while True:
+            await asyncio.sleep(interval)
+            if self._needs_save:
+                await self.save_all()
+
+    async def save_all(self):
+        """Принудительное сохранение всех измененных данных на диск"""
+        logger.info("Синхронизация данных с диском...")
+        # Сохраняем по очереди все важные файлы
+        await self.save_data("usernames")
+        await self.save_data("seen_ids")
+        await self.save_data("slave_stats")
+        await self.save_data("silent_chats")
+        self._needs_save = False  # Сбрасываем флаг после записи
+
+    def add_seen_id(self, user_id: int):
+        """Безопасно добавляет ID и помечает, что нужно сохранение"""
+        if user_id not in self.seen_ids:
+            self.seen_ids.add(user_id)
+            self._needs_save = True
+
     MUTE_STAGES = [5, 10, 30, 60, 120, 300, 720, 1440]
 
     def punish_slave(self, user_id: int):
@@ -99,9 +124,7 @@ class GachiDataManager:
         # Насильно меняем имя на fucking slave
         self.custom_usernames[user_id] = "fucking slave"
 
-        # Запускаем фоновое сохранение обоих файлов
-        asyncio.create_task(self.save_data("slave_stats"))
-        asyncio.create_task(self.save_data("usernames"))
+        self._needs_save = True
 
         return minutes  # Возвращаем на сколько минут замутили для уведомления
 
@@ -117,16 +140,5 @@ class GachiDataManager:
             # Возвращаем сколько осталось или до какого времени
             return until.strftime("%H:%M %d.%m")
         return None
-    #
-    # def reload_updates(self):
-    #     try:
-    #         new_data = self._load_json(self.UPDATES_FILE, [])
-    #         self.updates = new_data
-    #         logger.info(f"Журнал обновлений перечитан. Найдено записей: {len(self.updates)}")
-    #         return True
-    #     except Exception as e:
-    #         logger.error(f"Ошибка при перезагрузке обновлений: {e}")
-    #         return False
-
 
 db = GachiDataManager()

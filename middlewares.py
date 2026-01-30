@@ -1,6 +1,5 @@
 import logging
 import os
-import asyncio
 from typing import Any, Callable, Dict, Awaitable
 
 from aiogram import BaseMiddleware
@@ -36,9 +35,7 @@ class GachiMiddleware(BaseMiddleware):
             user_id = event.from_user.id
 
             if user_id not in db.seen_ids:
-                db.seen_ids.add(user_id)
-
-                asyncio.create_task(db.save_data("seen_ids"))
+                db.add_seen_id(user_id)
 
                 try:
                     await event.answer(f'Welcome to the club, buddy! Напиши "{Cmd.HELP}".')
